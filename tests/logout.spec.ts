@@ -18,66 +18,90 @@ test.describe('LogoutTest', () => {
   });
 
   test('LogoutSuccessfull', async () => {
-    await homePage.open();
-    await homePage.goToLoginPage();
-    await loginPage.login(user);
+    await test.step('Navigate to Login page', async () => {
+      await homePage.open();
+      await homePage.goToLoginPage();
+    });
 
-    await homePage.goToLogoutPage();
+    await test.step('Login with valid user', async () => {
+      await test.step(`Data: email=${user.email}, password=*****`, async () => { });
+      await loginPage.login(user);
+    });
+
+    await test.step('Logout', async () => {
+      await homePage.goToLogoutPage();
+    });
   });
 
   test('LogoutandLoginAgain', async () => {
-    await homePage.open();
-    await homePage.goToLoginPage();
-    await loginPage.login(user);
+    await test.step('Login first time', async () => {
+      await homePage.open();
+      await homePage.goToLoginPage();
 
-    await homePage.goToLogoutPage();
+      await test.step(`Data: email=${user.email}, password=*****`, async () => { });
+      await loginPage.login(user);
+    });
 
-    await homePage.goToLoginPage();
-    await loginPage.login(user);
+    await test.step('Logout', async () => {
+      await homePage.goToLogoutPage();
+    });
+
+    await test.step('Login again', async () => {
+      await homePage.goToLoginPage();
+      await test.step(`Data: email=${user.email}, password=*****`, async () => { });
+      await loginPage.login(user);
+    });
   });
 
   test('accessRestrictedPageAfterLogout', async ({ page }) => {
-    await homePage.open();
-    await homePage.goToLoginPage();
-    await loginPage.login(user);
+    await test.step('Login', async () => {
+      await homePage.open();
+      await homePage.goToLoginPage();
 
-    // Java: homePage.goToRestrictedPage();
-    await homePage.goToRestrictedPage();
+      await test.step(`Data: email=${user.email}, password=*****`, async () => { });
+      await loginPage.login(user);
+    });
 
-    // logout
-    await homePage.goToLogoutPage();
+    await test.step('Go to restricted page (assuming My Ticket or similar)', async () => {
+      // The original code named this restrictedPage, usually some page requiring auth
+      await homePage.goToRestrictedPage();
+    });
 
-    // Java: Constant.WEBDRIVER.navigate().back();
-    await page.goBack();
+    await test.step('Logout', async () => {
+      await homePage.goToLogoutPage();
+    });
 
-    // Java: assertFalse(loginPage.isDisplayed(), "User should be redirected to login page after logout");
-    // Giữ y hệt ý nghĩa: sau logout, back không được vào trang restricted nữa.
-    // loginPage.isDisplayed() đang check p.message (message lỗi) -> không ổn để dùng ở đây.
-    // Cách đúng nhất: assert vẫn ở login page hoặc greeting/logout tab không còn.
-    //
-    // Nếu bạn muốn "y hệt" như Java (dùng isDisplayed), vẫn gọi được:
-    // expect(await loginPage.isDisplayed()).toBeFalsy();
-
-    // ✅ Assertion ổn định nhất:
-    // Sau khi logout + back, phải bị đưa về login page (URL có Login) HOẶC không còn thấy logout tab.
-    await expect(page).toHaveURL(/Login/i);
+    await test.step('Verify cannot access restricted page via back button', async () => {
+      await page.goBack();
+      await expect(page).toHaveURL(/Login/i);
+    });
   });
 
   test('LogoutTabVisibility', async () => {
-    await homePage.open();
+    await test.step('Navigate to Home', async () => {
+      await homePage.open();
+    });
 
-    // Java: assertFalse(homePage.isLogoutTabVisible(), "Log out tab should not be visible before logging in");
-    expect(await homePage.isLogoutTabVisible()).toBeFalsy();
+    await test.step('Verify Logout tab is NOT visible initially', async () => {
+      expect(await homePage.isLogoutTabVisible()).toBeFalsy();
+    });
 
-    await homePage.goToLoginPage();
-    await loginPage.login(user);
+    await test.step('Login', async () => {
+      await homePage.goToLoginPage();
+      await test.step(`Data: email=${user.email}, password=*****`, async () => { });
+      await loginPage.login(user);
+    });
 
-    // Java code ghi assertFalse nhưng message lại nói "should be visible" (bị mâu thuẫn).
-    // Hành vi đúng: sau login thì logout tab PHẢI visible.
-    expect(await homePage.isLogoutTabVisible()).toBeTruthy();
+    await test.step('Verify Logout tab IS visible after login', async () => {
+      expect(await homePage.isLogoutTabVisible()).toBeTruthy();
+    });
 
-    await homePage.goToLogoutPage();
+    await test.step('Logout', async () => {
+      await homePage.goToLogoutPage();
+    });
 
-    expect(await homePage.isLogoutTabVisible()).toBeFalsy();
+    await test.step('Verify Logout tab is NOT visible after logout', async () => {
+      expect(await homePage.isLogoutTabVisible()).toBeFalsy();
+    });
   });
 });

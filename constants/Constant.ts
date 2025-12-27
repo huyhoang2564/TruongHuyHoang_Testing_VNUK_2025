@@ -1,23 +1,15 @@
-// constants/Constant.ts
 export const Constant = {
   RAILWAY_URL: 'http://railwayb2.somee.com/' as const,
 
-  /**
-   * Format date giống Java DateTimeFormatter trong project Railway (thường là M/d/yyyy).
-   * Ví dụ: 1/5/2026
-   */
   formatDate(date: Date): string {
     const d = new Date(date);
-    const month = d.getMonth() + 1; // 1-12
-    const day = d.getDate();        // 1-31
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
     const year = d.getFullYear();
     return `${month}/${day}/${year}`;
   },
 
-  /**
-   * Parse text ngày từ bảng "Depart Date" về Date (date-only).
-   * Expected: M/d/yyyy
-   */
+
   parseDate(text: string): Date {
     const t = text.trim();
 
@@ -34,5 +26,11 @@ export const Constant = {
     const d = new Date(year, month - 1, day);
     d.setHours(0, 0, 0, 0);
     return d;
+  },
+
+  addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
   }
 } as const;

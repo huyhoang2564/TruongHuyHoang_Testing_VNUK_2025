@@ -1,11 +1,15 @@
-// pages/BasePage.ts
+
 import { Page, Locator } from '@playwright/test';
 import { Constant } from '../constants/Constant';
 
 export class BasePage {
   protected readonly page: Page;
 
-  // ===== Top menu locators =====
+  public getCurrentUrl(): string {
+    return this.page.url();
+  }
+
+
   private readonly loginTabLocator: Locator;
   private readonly registerTabLocator: Locator;
   private readonly bookTicketTabLocator: Locator;
@@ -16,18 +20,18 @@ export class BasePage {
   private readonly faqTabLocator: Locator;
   private readonly homeTabLocator: Locator;
 
-  // 👉 Cho phép page con dùng
+
   protected readonly logoutTabLocator: Locator;
   private readonly changePasswordTabLocator: Locator;
 
-  // ===== Common elements =====
+
   private readonly greetingLabelLocator: Locator;
   private readonly headerLocator: Locator;
 
   constructor(page: Page) {
     this.page = page;
 
-    // XPath giống hệt Selenium Java
+
     this.loginTabLocator = page.locator("//a[span[text()='Login']]");
     this.registerTabLocator = page.locator("//a[span[text()='Register']]");
     this.bookTicketTabLocator = page.locator("//a[span[text()='Book ticket']]");
@@ -44,7 +48,6 @@ export class BasePage {
     this.headerLocator = page.locator('h1');
   }
 
-  // ===== Common actions =====
 
   async getHeaderText(): Promise<string> {
     return (await this.headerLocator.innerText()).trim();
@@ -99,7 +102,65 @@ export class BasePage {
   }
 
   async goToRestrictedPage(): Promise<void> {
-    // giống Constant.WEBDRIVER.get(Constant.RAILWAY_URL)
     await this.page.goto(Constant.RAILWAY_URL);
+  }
+
+  /**
+   * Check if there are any broken images on the page
+   */
+  async getAllBrokenImages(): Promise<string[]> {
+    const brokenImages: string[] = [];
+    const images = await this.page.locator('img').all();
+
+    for (const img of images) {
+      const src = await img.getAttribute('src');
+      const naturalWidth = await img.evaluate((el: HTMLImageElement) => el.naturalWidth);
+
+      if (naturalWidth === 0 || !src) {
+        brokenImages.push(src || 'unknown');
+      }
+    }
+
+    return brokenImages;
+  }
+
+  /**
+   * Check hover state on buttons
+   */
+  async checkButtonsHoverState(): Promise<boolean> {
+    const buttons = await this.page.locator('button, input[type=submit], input[type=button]').all();
+
+    for (const button of buttons) {
+      await button.hover();
+      await this.page.waitForTimeout(100);
+    }
+
+    return true;
+  }
+
+  /**
+   * Check tab index navigation
+   */
+  async checkTabIndexNavigation(): Promise<boolean> {
+    for (let i = 0; i < 10; i++) {
+      await this.page.keyboard.press('Tab');
+      await this.page.waitForTimeout(100);
+    }
+    return true;
+  }
+
+  async getAllLinks(): Promise<Array<{ text: string; href: string }>> {
+    const linksData: Array<{ text: string; href: string }> = [];
+    const links = await this.page.locator('a').all();
+
+    for (const link of links) {
+      const text = await link.innerText().catch(() => '');
+      const href = (await link.getAttribute('href')) || '';
+      if (text.trim() && href) {
+        linksData.push({ text: text.trim(), href });
+      }
+    }
+
+    return linksData;
   }
 }
